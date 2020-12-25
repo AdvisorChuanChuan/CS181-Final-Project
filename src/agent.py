@@ -17,9 +17,7 @@ class ApproximateQAgent:
         return self.weights
     
     def getLegalActions(self, state):
-        """
-        TODO
-        """
+        return state.getLegalActions()
 
     def getQValue(self, state, action):
         """
