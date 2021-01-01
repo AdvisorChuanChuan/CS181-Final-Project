@@ -3,7 +3,9 @@ import json
 import os
 import pandas as pd
 import datetime
-from src.constants import destinations, restaurants, foods, week
+import sys
+sys.path.append("..")
+from constants import destinations, restaurants, foods, week
 
 
 class MyTime(datetime.time):

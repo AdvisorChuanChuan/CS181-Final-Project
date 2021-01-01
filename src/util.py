@@ -742,3 +742,19 @@ def unmutePrint():
 
     sys.stdout = _ORIGINAL_STDOUT
     #sys.stderr = _ORIGINAL_STDERR
+
+def getHandleOrdersChoices(_ImmOrders):
+    if len(_ImmOrders) == 0:
+        return []
+    OrderIndices = [order[0] for order in _ImmOrders]
+    Choices_in_num = [i for i in range(2**len(OrderIndices)-1)]
+    Choices = []
+    for choice_num in Choices_in_num:
+        choice = [[],[]]
+        for i in range(len(OrderIndices)):
+            catagory = choice_num % 2
+            choice[catagory].append(OrderIndices[i])
+            choice_num >> 1
+        Choices.append(choice)
+    return Choices
+        
