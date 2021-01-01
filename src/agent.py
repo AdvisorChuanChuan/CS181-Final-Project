@@ -1,5 +1,6 @@
+import random as rd
 import util
-from buffer import *
+# from buffer import *
 from featureExtractor import *
 
 class ApproximateQAgent:
@@ -7,13 +8,13 @@ class ApproximateQAgent:
     Approximate Q-learning agent
     Use a particular feature extractor
     """
-    def __init__(self, _extractor = FeatureExtractor()):
+    def __init__(self, _actionFn, _extractor = FeatureExtractor()):
         self.alpha = 0.2  # learning rate
         self.gamma = 0.8  # discounting factor
         self.epsilon = 0.05  # exploration factor
+        self.actionFn = _actionFn
 
-        self.orderBuffer = OrderBuffer()
-
+        self.orderBuffer = []
         self.featExtractor = _extractor
         self.weights = util.Counter()
 
@@ -21,7 +22,7 @@ class ApproximateQAgent:
         return self.weights
     
     def getLegalActions(self, _state):
-        return _state.getLegalActions()
+        return self.actionFn(_state)
 
     def getQValue(self, _state, _action):
         """
@@ -41,6 +42,27 @@ class ApproximateQAgent:
             return 0.0
 
         return max([self.getQValue(_state, action) for action in self.getLegalActions(_state)])
+
+    def getPolicy(self, _state):
+        """
+        return argmax_action Q(state, action)
+        """
+        if len(self.getLegalActions(_state)) == 0:
+            return None
+        max_qvalue = self.getValue(_state)
+        best_actions = [action for action in self.getLegalActions(_state) if self.getQValue(_state, action) == max_qvalue]
+        return rd.choice(best_actions)
+
+    def getAction(self, _state):
+        """
+        a random action or policy
+        """
+        if len(self.getLegalActions(_state)) == 0:
+            return None
+        if util.flipCoin(self.epsilon):
+            return rd.choice(self.getLegalActions(_state))
+        else:
+            return self.getPolicy(_state)
 
     def update(self, _state, _action, _nextState, _reward):
         """
