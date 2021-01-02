@@ -676,6 +676,7 @@ def pause():
 #
 import signal
 import time
+import datetime as dt
 
 
 class TimeoutFunctionException(Exception):
@@ -758,3 +759,15 @@ def getHandleOrdersChoices(_ImmOrders):
         Choices.append(choice)
     return Choices
         
+def str_to_datetime(_str_time):
+    """
+    _str_time = '11:20:00'
+    """
+    tm_time = time.strptime(_str_time, '%H:%M:%S')
+    return dt.datetime(2020,1,1,tm_time[3], tm_time[4], tm_time[5])
+
+def datetime_to_str(_dt_time):
+    """
+    return '11:20:00'
+    """
+    return _dt_time.strftime('%H:%M:%S', _dt_time)
