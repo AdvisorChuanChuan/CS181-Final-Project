@@ -3,9 +3,10 @@ import json
 import os
 import pandas as pd
 import datetime
-import sys
-sys.path.append("..")
-from constants import destinations, restaurants, foods, week
+from src.constants import destinations, restaurants, foods, week
+
+
+# todo: sort by time
 
 
 class MyTime(datetime.time):
@@ -26,11 +27,13 @@ class MyTime(datetime.time):
 
 
 class Order:
-    def __init__(self, created_time: datetime.time, restaurant: str, destination: str, food: str = None):
+    def __init__(self, created_time: datetime.time, restaurant: str, destination: str, time_limit: int = None,
+                 food: str = None):
         self.create_time = created_time
         self.restaurant = restaurant
         self.destination = destination
         self.food = food
+        self.time_limit = time_limit
 
 
 class OrderGenerator:
@@ -53,15 +56,18 @@ class OrderGenerator:
         file_index = 0
         tem_create_time = []
         tem_restaurant = []
+        tem_limit = []
         if not os.path.exists("data"):
             os.makedirs("data")
         for day in self.dataSource:
             for data in day:
                 tem_create_time.append(str(data.create_time))
                 tem_restaurant.append(data.restaurant)
+                tem_limit.append(str(data.time_limit))
             data = pd.DataFrame(data={
                 "created_time": tem_create_time,
-                "restaurant": tem_restaurant
+                "restaurant": tem_restaurant,
+                "limit_time": tem_limit
             })
             data.to_csv('./data/{}.csv'.format(file_index), index=True)
             file_index += 1
@@ -71,28 +77,37 @@ class OrderGenerator:
         features = [
             {
                 "time": MyTime(11, 50),
-                "res": self.restaurants[0]
+                "res": self.restaurants[0]["name"],
+                "limit": self.get_time_limit(self.restaurants[0]["distance"])
             },
             {
                 "time": MyTime(12, 30),
-                "res": self.restaurants[1]
+                "res": self.restaurants[1]["name"],
+                "limit": self.get_time_limit(self.restaurants[1]["distance"])
             },
             {
                 "time": MyTime(11, 30),
-                "res": self.restaurants[2]
+                "res": self.restaurants[2]["name"],
+                "limit": self.get_time_limit(self.restaurants[2]["distance"])
             },
             {
                 "time": MyTime(12, 50),
-                "res": self.restaurants[3]
+                "res": self.restaurants[3]["name"],
+                "limit": self.get_time_limit(self.restaurants[3]["distance"])
             }
         ]
         for f in features:
             for i in range(size):
                 delta = np.random.normal(0, 5)
-                tem_re.append(Order(f['time'] + datetime.timedelta(minutes=delta), f['res'], self.destination))
+                tem_re.append(Order(f['time'] + datetime.timedelta(minutes=delta), f['res'], self.destination, f['limit']))
         self.dataSource.append(tem_re)
+
+    @staticmethod
+    def get_time_limit(distance):
+        return distance * 2 + 10
 
 
 if __name__ == "__main__":
     instance = OrderGenerator(restaurants, destinations, foods, day=1e3)
     instance.csv_encoder()
+
