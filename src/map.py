@@ -5,7 +5,7 @@ class Mymap:
         self.destination_idx = 0
         self.restaurants_num = 4
         self.des_pos = (5,2)
-        self.restaurants_poss = ["""TODO"""]
+        self.restaurants_poss = [(0,0), (1,8), (6,6), (13,4)]
         self.accessed = []
         self.positions = []
         self.successors = {}

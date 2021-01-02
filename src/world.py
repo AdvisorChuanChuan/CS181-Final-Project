@@ -1,22 +1,24 @@
 import pandas as pd
 import datetime as dt
+import random as rd
 import util
 from map import *
 from agent import *
 
-class WorldState:
+class World:
     def __init__(self, _map = Mymap()):
         self.map = _map
-        self.agent = ApproximateQAgent(self.getLegalActions)
-        self.agent_pos = (5,2) # at campus
-        self.curr_time = dt.datetime(2020,1,1,11)
+        self.agent = ApproximateQAgent(self.getLegalActions, self)
+        self.init_agent_pos = (5,2) # at campus
+        self.start_time = dt.datetime(2020,1,1,11)
         self.end_time = dt.datetime(2020,1,1,14)  # 11:00 --- 14:00, 1 min per action
         self.delta_t = dt.timedelta(seconds=60)    # deltat = 1 min
         self.orders_packet_idx = 0
-        self.training_df = pd.read_csv("./data/" + str(self.orders_packet_idx) + ".csv")
+        self.training_df = pd.read_csv("data/" + str(self.orders_packet_idx) + ".csv")
 
         self.living_cost = -1
         self.reward_per_order = 10
+        self.penalty_per_order = 9
 
 
     def getImmOrders(self, _str_time):
@@ -53,7 +55,7 @@ class WorldState:
         nextState.append(_state[2].copy())
         for received_idx in _action[1]:
             nextState[2].append(self.training_df.iloc[received_idx].values.tolist())
-        # Update received orders
+        # Update received orders to carrying status
         nextState.append(_state[3].copy())
         if _state[0] in self.map.restaurants_poss:
             cur_res_idx = self.map.restaurants_poss.index(_state[0])
@@ -63,14 +65,17 @@ class WorldState:
                     nextState[3].append(received_order.copy())
                     nextState[2].remove(received_order)
         # Update carrying orders
-        reward = self.living_cost
+        actual_reward = self.living_cost
         if _state[0] == self.map.des_pos:
-            reward = self.reward_per_order * len(nextState[3])
+            tot_reward = self.reward_per_order * len(nextState[3])
+            tot_penalty = 0
+            for order in nextState[3]:
+                if dt_curr_time > util.getDueTime(order):
+                    tot_penalty += self.penalty_per_order
             nextState[3] = []
-        # TODO: add penalty for delayed orders
-        return nextState, reward
+            actual_reward = tot_reward - tot_penalty
 
-
+        return tuple(nextState), actual_reward
 
     def getLegalActions(self, _state):
         """
@@ -81,7 +86,7 @@ class WorldState:
         * Stay down and do nothing
         e.g. an action ('South', [0,1], [2]) means to go south, while receiving order 0&1 but rejecting 2
         """
-        if _state[1] >= self.end_time:
+        if util.str_to_datetime(_state[1]) >= self.end_time:
             return []
         
         successors = self.map.get_successor(_state[0])
@@ -101,9 +106,34 @@ class WorldState:
         actions = []
         for move_action in move_actions:
             for order_action in order_actions:
+                # order_action = ([received_idxs],[rejected_idxs])
                 actions.append((move_action, order_action[0], order_action[1]))
         
         return actions
+
+    def trainWeights(self, numIter = 10):
+        """
+        Start from an innocent agent, repeat the delivery period for numIter times.
+        Actions are chosen arbitrarily.
+        """
+        for iter_idx in range(numIter):
+            score_per_iter = 0
+            state = (self.init_agent_pos, util.datetime_to_str(self.start_time), [], [])
+            actions = self.getLegalActions(state)
+            print(state, "\n", actions)
+            while len(actions) != 0:
+                action = rd.choice(actions)
+                nextState, reward = self.getSuccessorStateandReward(state, action)
+                self.agent.update(state, action, nextState, reward)
+                score_per_iter += reward
+                state = nextState
+                actions = self.getLegalActions(state)
+            # TODO: plot this figure
+            print("score of iter", iter_idx, ": ", score_per_iter)
+
+if __name__ == "__main__":
+    zhangjiang = World()
+    zhangjiang.trainWeights()
 
 
 

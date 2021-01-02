@@ -746,7 +746,7 @@ def unmutePrint():
 
 def getHandleOrdersChoices(_ImmOrders):
     if len(_ImmOrders) == 0:
-        return []
+        return [([],[])]
     OrderIndices = [order[0] for order in _ImmOrders]
     Choices_in_num = [i for i in range(2**len(OrderIndices))]
     Choices = []
@@ -756,7 +756,7 @@ def getHandleOrdersChoices(_ImmOrders):
             catagory = choice_num % 2
             choice[catagory].append(OrderIndices[i])
             choice_num >>= 1
-        Choices.append(choice)
+        Choices.append(tuple(choice))
     return Choices
         
 def str_to_datetime(_str_time):
@@ -770,4 +770,11 @@ def datetime_to_str(_dt_time):
     """
     return '11:20:00'
     """
-    return _dt_time.strftime('%H:%M:%S', _dt_time)
+    return _dt_time.strftime('%H:%M:%S')
+
+def getDueTime(_order):
+    """
+    Return the due time(datatime type) of an order(list)
+    """
+    dt_cur_time = str_to_datetime(_order[1])
+    return dt_cur_time + dt.timedelta(minutes = _order[3])

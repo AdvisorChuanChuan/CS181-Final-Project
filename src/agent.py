@@ -8,14 +8,14 @@ class ApproximateQAgent:
     Approximate Q-learning agent
     Use a particular feature extractor
     """
-    def __init__(self, _actionFn, _extractor = FeatureExtractor()):
+    def __init__(self, _actionFn, _world):
         self.alpha = 0.2  # learning rate
         self.gamma = 0.8  # discounting factor
         self.epsilon = 0.05  # exploration factor
         self.actionFn = _actionFn
 
         self.orderBuffer = []
-        self.featExtractor = _extractor
+        self.featExtractor = FeatureExtractor(_world)
         self.weights = util.Counter()
 
     def getWeights(self):
