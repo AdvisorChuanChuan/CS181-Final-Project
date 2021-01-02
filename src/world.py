@@ -134,6 +134,23 @@ class World:
                     self.testOneEpisode()
             # TODO: plot this figure
 
+    def valueIter(self, numIter = 1000):
+        # Fill all states
+        qtable = []
+        init_state = (self.init_agent_pos, util.datetime_to_str(self.start_time), [], [])
+        queue = util.Queue()
+        queue.push(init_state)
+        while not queue.empty():
+            state = queue.pop()
+            states.append(state)
+            for action in self.getLegalActions(state):
+                successor, _ = self.getSuccessorStateandReward(state, action)
+                queue.push(successor)
+        
+        for iter_idx in range(numIter):
+
+
+
     def testOneEpisode(self):
         """
         Test the policy for one episode
