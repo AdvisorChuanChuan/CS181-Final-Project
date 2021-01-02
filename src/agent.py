@@ -9,8 +9,8 @@ class ApproximateQAgent:
     Use a particular feature extractor
     """
     def __init__(self, _actionFn, _world):
-        self.alpha = 0.2  # learning rate
-        self.gamma = 0.8  # discounting factor
+        self.alpha = 0.01  # learning rate
+        self.gamma = 0.5  # discounting factor
         self.epsilon = 0.05  # exploration factor
         self.actionFn = _actionFn
 
@@ -40,8 +40,9 @@ class ApproximateQAgent:
         """
         if len(self.getLegalActions(_state)) == 0:
             return 0.0
-
-        return max([self.getQValue(_state, action) for action in self.getLegalActions(_state)])
+        qvalues = [self.getQValue(_state, action) for action in self.getLegalActions(_state)]
+        print(qvalues)
+        return max(qvalues)
 
     def getPolicy(self, _state):
         """
@@ -51,6 +52,8 @@ class ApproximateQAgent:
             return None
         max_qvalue = self.getValue(_state)
         best_actions = [action for action in self.getLegalActions(_state) if self.getQValue(_state, action) == max_qvalue]
+        if len(best_actions) == 0:
+            print("max_qvalue: ", max_qvalue)
         return rd.choice(best_actions)
 
     def getAction(self, _state):

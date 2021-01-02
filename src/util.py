@@ -777,4 +777,4 @@ def getDueTime(_order):
     Return the due time(datatime type) of an order(list)
     """
     dt_cur_time = str_to_datetime(_order[1])
-    return dt_cur_time + dt.timedelta(minutes = _order[3])
+    return dt_cur_time + dt.timedelta(minutes = int(_order[3]))

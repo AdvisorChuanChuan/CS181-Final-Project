@@ -111,7 +111,7 @@ class World:
         
         return actions
 
-    def trainWeights(self, numIter = 10):
+    def trainWeights(self, numIter = 100):
         """
         Start from an innocent agent, repeat the delivery period for numIter times.
         Actions are chosen arbitrarily.
@@ -120,16 +120,34 @@ class World:
             score_per_iter = 0
             state = (self.init_agent_pos, util.datetime_to_str(self.start_time), [], [])
             actions = self.getLegalActions(state)
-            print(state, "\n", actions)
             while len(actions) != 0:
+                # print(state)
                 action = rd.choice(actions)
                 nextState, reward = self.getSuccessorStateandReward(state, action)
                 self.agent.update(state, action, nextState, reward)
                 score_per_iter += reward
                 state = nextState
                 actions = self.getLegalActions(state)
+            if iter_idx % 10 == 0:
+                print("iter", iter_idx)
+                if iter_idx > 2:
+                    self.testOneEpisode()
             # TODO: plot this figure
-            print("score of iter", iter_idx, ": ", score_per_iter)
+
+    def testOneEpisode(self):
+        """
+        Test the policy for one episode
+        """
+        score = 0
+        state = (self.init_agent_pos, util.datetime_to_str(self.start_time), [], [])
+        actions = self.getLegalActions(state)
+        while len(actions) != 0:
+            action = self.agent.getPolicy(state)
+            nextState, reward = self.getSuccessorStateandReward(state, action)
+            score += reward
+            state = nextState
+            actions = self.getLegalActions(state)
+        print("score = ", score)
 
 if __name__ == "__main__":
     zhangjiang = World()
