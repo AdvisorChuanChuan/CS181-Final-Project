@@ -18,6 +18,7 @@ class ApproximateQAgent:
         self.featExtractor = FeatureExtractor(_world)
         self.weights = util.Counter()
         self.world = _world
+        self.policy = util.Counter()  # Contain the action idx
 
     def getWeights(self):
         return self.weights
@@ -44,6 +45,10 @@ class ApproximateQAgent:
         qvalues = [self.getQValue(_state, action) for action in self.getLegalActions(_state)]
         print(qvalues)
         return max(qvalues)
+
+    def getPolicy_byDict(self, _state):
+        actions = self.getLegalActions(_state)
+        return actions[self.policy[_state]]
 
     def getPolicy_byQvalues(self, _state):
         """
@@ -72,16 +77,17 @@ class ApproximateQAgent:
         corres_actions = [action.index(highest_state) for highest_state in highest_value_states]
         return rd.choice(corres_actions)
 
-    # def getAction(self, _state):
-    #     """
-    #     a random action or policy
-    #     """
-    #     if len(self.getLegalActions(_state)) == 0:
-    #         return None
-    #     if util.flipCoin(self.epsilon):
-    #         return rd.choice(self.getLegalActions(_state))
-    #     else:
-    #         return self.getPolicy(_state)
+    def getAction(self, _state):
+        """
+        a random action or policy
+        """
+        actions = self.getLegalActions(_state)
+        if len(actions) == 0:
+            return None
+        if util.flipCoin(self.epsilon):
+            return rd.choice(actions)
+        else:
+            return self.getPolicy_byDict(_state)
 
     def update(self, _state, _action, _nextState, _reward):
         """
