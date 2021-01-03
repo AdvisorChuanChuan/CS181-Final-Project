@@ -17,6 +17,7 @@ class ApproximateQAgent:
         self.orderBuffer = []
         self.featExtractor = FeatureExtractor(_world)
         self.weights = util.Counter()
+        self.world = _world
 
     def getWeights(self):
         return self.weights
@@ -44,7 +45,7 @@ class ApproximateQAgent:
         print(qvalues)
         return max(qvalues)
 
-    def getPolicy(self, _state):
+    def getPolicy_byQvalues(self, _state):
         """
         return argmax_action Q(state, action)
         """
@@ -56,16 +57,31 @@ class ApproximateQAgent:
             print("max_qvalue: ", max_qvalue)
         return rd.choice(best_actions)
 
-    def getAction(self, _state):
+    def getPolicy_byValues(self, _state, _values):
         """
-        a random action or policy
+        values = util.Counter
         """
-        if len(self.getLegalActions(_state)) == 0:
-            return None
-        if util.flipCoin(self.epsilon):
-            return rd.choice(self.getLegalActions(_state))
-        else:
-            return self.getPolicy(_state)
+        actions = self.getLegalActions(_state)
+        assert(len(actions) != 0)
+        successors = []
+        for action in actions:
+            successor, _ = self.world.getSuccessorStateandReward(_state, action)
+            successors.append(successor)
+        highest_value = max([_values[successor] for successor in successors])
+        highest_value_states = [successor for successor in successors if _values[successor] == highest_value]
+        corres_actions = [action.index(highest_state) for highest_state in highest_value_states]
+        return rd.choice(corres_actions)
+
+    # def getAction(self, _state):
+    #     """
+    #     a random action or policy
+    #     """
+    #     if len(self.getLegalActions(_state)) == 0:
+    #         return None
+    #     if util.flipCoin(self.epsilon):
+    #         return rd.choice(self.getLegalActions(_state))
+    #     else:
+    #         return self.getPolicy(_state)
 
     def update(self, _state, _action, _nextState, _reward):
         """

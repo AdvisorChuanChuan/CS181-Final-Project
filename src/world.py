@@ -1,5 +1,6 @@
 import pandas as pd
 import datetime as dt
+import math
 import random as rd
 import util
 from map import *
@@ -10,15 +11,17 @@ class World:
         self.map = _map
         self.agent = ApproximateQAgent(self.getLegalActions, self)
         self.init_agent_pos = (5,2) # at campus
-        self.start_time = dt.datetime(2020,1,1,11)
-        self.end_time = dt.datetime(2020,1,1,14)  # 11:00 --- 14:00, 1 min per action
+        self.start_time = dt.datetime(2020,1,1,11,30)
+        self.end_time = dt.datetime(2020,1,1,12,15)  # 11:00 --- 14:00, 1 min per action
         self.delta_t = dt.timedelta(seconds=60)    # deltat = 1 min
         self.orders_packet_idx = 0
-        self.training_df = pd.read_csv("data/" + str(self.orders_packet_idx) + ".csv")
+        self.training_df = pd.read_csv("data/" + str(self.orders_packet_idx) + ".csv")[0:15]
 
         self.living_cost = -1
         self.reward_per_order = 10
         self.penalty_per_order = 9
+
+        self.init_agent_state = (self.init_agent_pos, util.datetime_to_str(self.start_time), (), ())
 
 
     def getImmOrders(self, _str_time):
@@ -26,7 +29,8 @@ class World:
         Return the list of immediate orders
         """
         curr_time_string = _str_time
-        ImmOrders = self.training_df[self.training_df['created_time'] == curr_time_string].values.tolist()
+        curr_df = self.training_df[self.training_df['created_time'] == curr_time_string]
+        ImmOrders = tuple([tuple(x) for x in curr_df.values])
         return ImmOrders
 
     def getSuccessorStateandReward(self, _state, _action):
@@ -52,17 +56,17 @@ class World:
         dt_next_time = dt_curr_time + self.delta_t
         nextState.append(util.datetime_to_str(dt_next_time))
         # Receive orders
-        nextState.append(_state[2].copy())
+        nextState.append(list(_state[2]))
         for received_idx in _action[1]:
-            nextState[2].append(self.training_df.iloc[received_idx].values.tolist())
+            nextState[2].append(tuple(self.training_df.iloc[received_idx].values.tolist()))
         # Update received orders to carrying status
-        nextState.append(_state[3].copy())
+        nextState.append(list(_state[3]))
         if _state[0] in self.map.restaurants_poss:
             cur_res_idx = self.map.restaurants_poss.index(_state[0])
             cur_res_name = 'res_' + chr(ord('A') + cur_res_idx)
             for received_order in nextState[2]:
                 if cur_res_name in received_order:
-                    nextState[3].append(received_order.copy())
+                    nextState[3].append(received_order)
                     nextState[2].remove(received_order)
         # Update carrying orders
         actual_reward = self.living_cost
@@ -74,8 +78,18 @@ class World:
                     tot_penalty += self.penalty_per_order
             nextState[3] = []
             actual_reward = tot_reward - tot_penalty
-
+        # Convert order lists to tuples
+        nextState[2] = tuple(nextState[2])
+        nextState[3] = tuple(nextState[3])
         return tuple(nextState), actual_reward
+
+    def getFinalStateValue(self, _state):
+        assert(len(self.getLegalActions(_state)) == 0)
+        exceed_orders_num = 0
+        for order in _state[2] + _state[3]:
+            if util.str_to_datetime(_state[1]) >= util.getDueTime(order):
+                exceed_orders_num += 1
+        return -exceed_orders_num * self.penalty_per_order
 
     def getLegalActions(self, _state):
         """
@@ -91,7 +105,8 @@ class World:
         
         successors = self.map.get_successor(_state[0])
         assert(len(successors)>0)
-        move_actions = ['Stay']
+        # move_actions = ['Stay']
+        move_actions = []
         if (_state[0][0]+1, _state[0][1]) in successors:
             move_actions.append('South')
         if (_state[0][0]-1, _state[0][1]) in successors:
@@ -118,7 +133,7 @@ class World:
         """
         for iter_idx in range(numIter):
             score_per_iter = 0
-            state = (self.init_agent_pos, util.datetime_to_str(self.start_time), [], [])
+            state = self.init_agent_state
             actions = self.getLegalActions(state)
             while len(actions) != 0:
                 # print(state)
@@ -131,35 +146,68 @@ class World:
             if iter_idx % 10 == 0:
                 print("iter", iter_idx)
                 if iter_idx > 2:
-                    self.testOneEpisode()
+                    self.testOneEpisode_byQvalues()
             # TODO: plot this figure
 
     def valueIter(self, numIter = 1000):
         # Fill all states
-        qtable = []
-        init_state = (self.init_agent_pos, util.datetime_to_str(self.start_time), [], [])
+        states = []
+        init_state = self.init_agent_state
         queue = util.Queue()
         queue.push(init_state)
-        while not queue.empty():
+        while not queue.isEmpty():
+            if len(states) > 0 and math.log(len(states),10) - int(math.log(len(states),10)) == 0:
+                print("states num = 10 ^ ", math.log(len(states),10))
+                print(states[-1])
             state = queue.pop()
             states.append(state)
             for action in self.getLegalActions(state):
                 successor, _ = self.getSuccessorStateandReward(state, action)
-                queue.push(successor)
-        
+                if successor not in queue.list and successor not in states:
+                    queue.push(successor)
+        values = util.Counter()
+
         for iter_idx in range(numIter):
+            if iter_idx % 50 == 0:
+                print("iter ", iter_idx)
+                self.testOneEpisode_byValues(values)
+            new_values = util.Counter()
+            for state in states:
+                actions = self.getLegalActions(state)
+                if len(actions) == 0:
+                    new_values[state] = self.getFinalStateValue(state)
+                else:
+                    values_on_action = []
+                    for action in actions:
+                        successor, reward = self.getSuccessorStateandReward(state, action)
+                        values_on_action.append(reward + self.agent.gamma * values[successor])
+                    new_values[state] = max(values_on_action)
+            values = new_values.copy()
 
-
-
-    def testOneEpisode(self):
+    def testOneEpisode_byQvalues(self):
         """
         Test the policy for one episode
         """
         score = 0
-        state = (self.init_agent_pos, util.datetime_to_str(self.start_time), [], [])
+        state = self.init_agent_state
         actions = self.getLegalActions(state)
         while len(actions) != 0:
-            action = self.agent.getPolicy(state)
+            action = self.agent.getPolicy_byQvalues(state)
+            nextState, reward = self.getSuccessorStateandReward(state, action)
+            score += reward
+            state = nextState
+            actions = self.getLegalActions(state)
+        print("score = ", score)
+
+    def testOneEpisode_byValues(self, _values):
+        """
+        Test the policy for one episode
+        """
+        score = 0
+        state = self.init_agent_state
+        actions = self.getLegalActions(state)
+        while len(actions) != 0:
+            action = self.agent.getPolicy_byValues(state, _values)
             nextState, reward = self.getSuccessorStateandReward(state, action)
             score += reward
             state = nextState
@@ -168,6 +216,7 @@ class World:
 
 if __name__ == "__main__":
     zhangjiang = World()
+    # zhangjiang.valueIter()
     zhangjiang.trainWeights()
 
 
