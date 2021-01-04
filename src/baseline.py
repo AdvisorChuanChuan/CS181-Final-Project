@@ -88,6 +88,9 @@ class GreedyWorld:
                 print(self.agent.received)
                 print(len(self.agent.received))
                 " Judge whether the pos is on the restaurant pos "
+                received = []
+                for rec in self.agent.received:
+                    received.append(rec)
                 for i in range(0, 4):
                     if self.agent.pos == self.map.restaurants_poss[i]:
                         # for j in range(len(self.agent.received)):
@@ -98,7 +101,8 @@ class GreedyWorld:
                             if order[2] == self.res_name[i]:
                                 print('here!')
                                 self.agent.carrying.append(order)
-                                self.agent.received.remove(order)
+                                received.remove(order)
+                self.agent.received = received
                 print(current_time)
                 print(self.agent.received)
                 " Plan the next pos "
@@ -131,3 +135,4 @@ class GreedyWorld:
 
 basegreedy = GreedyWorld()
 basegreedy.test_greedy()
+print(basegreedy.reward)
