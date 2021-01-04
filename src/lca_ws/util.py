@@ -756,6 +756,8 @@ def getHandleOrdersChoices(_ImmOrders):
             catagory = choice_num % 2
             choice[catagory].append(OrderIndices[i])
             choice_num >>= 1
+        choice[0] = tuple(choice[0])
+        choice[1] = tuple(choice[1])
         Choices.append(tuple(choice))
     return Choices
         

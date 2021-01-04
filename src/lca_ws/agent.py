@@ -1,4 +1,5 @@
 import random as rd
+import datetime as dt
 import util
 # from buffer import *
 from featureExtractor import *
@@ -10,7 +11,7 @@ class ApproximateQAgent:
     """
     def __init__(self, _actionFn, _world):
         self.alpha = 0.01  # learning rate
-        self.gamma = 0.5  # discounting factor
+        self.gamma = 0.8  # discounting factor
         self.epsilon = 0.05  # exploration factor
         self.actionFn = _actionFn
 
@@ -43,7 +44,8 @@ class ApproximateQAgent:
         if len(self.getLegalActions(_state)) == 0:
             return 0.0
         qvalues = [self.getQValue(_state, action) for action in self.getLegalActions(_state)]
-        print(qvalues)
+        # if dt.datetime.now().second % 10 == 0:
+            # print(qvalues)
         return max(qvalues)
 
     def getPolicy_byDict(self, _state):
@@ -52,6 +54,7 @@ class ApproximateQAgent:
 
     def getPolicy_byQvalues(self, _state):
         """
+        Use approximate Q learning
         return argmax_action Q(state, action)
         """
         if len(self.getLegalActions(_state)) == 0:
@@ -77,7 +80,7 @@ class ApproximateQAgent:
         corres_actions = [action.index(highest_state) for highest_state in highest_value_states]
         return rd.choice(corres_actions)
 
-    def getAction(self, _state):
+    def getAction_byDict(self, _state):
         """
         a random action or policy
         """
@@ -88,6 +91,18 @@ class ApproximateQAgent:
             return rd.choice(actions)
         else:
             return self.getPolicy_byDict(_state)
+    
+    def getAction_byQvalues(self, _state):
+        """
+        a random action or policy_Qvalues
+        """
+        actions = self.getLegalActions(_state)
+        if len(actions) == 0:
+            return None
+        if util.flipCoin(self.epsilon):
+            return rd.choice(actions)
+        else:
+            return self.getPolicy_byQvalues(_state)
 
     def update(self, _state, _action, _nextState, _reward):
         """

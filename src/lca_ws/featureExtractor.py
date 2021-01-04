@@ -31,7 +31,7 @@ class FeatureExtractor:
                 extra_mins_sum += extra_time.total_seconds() / 60
             else:
                 late_orders_num += 1
-        features["extra-mins-sum-1-step-away"] = float(extra_mins_sum)
+        # features["extra-mins-sum-1-step-away"] = float(extra_mins_sum)
         features["late_orders_num-1-step-away"] = float(late_orders_num)
 
         return features

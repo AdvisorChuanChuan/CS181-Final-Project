@@ -12,11 +12,13 @@ class World:
         self.agent = ApproximateQAgent(self.getLegalActions, self)
         self.init_agent_pos = (5,2) # at campus
         self.start_time = dt.datetime(2020,1,1,11,30)
-        self.end_time = dt.datetime(2020,1,1,12,15)  # 11:00 --- 14:00, 1 min per action
+        self.end_time = dt.datetime(2020,1,1,13,00)  # 11:00 --- 14:00, 1 min per action
         self.delta_t = dt.timedelta(seconds=60)    # deltat = 1 min
         self.orders_packet_idx = 0
         self.training_df = pd.read_csv("data/" + str(self.orders_packet_idx) + ".csv")[0:15]
 
+        self.max_received_num = 3
+        self.max_carrying_num = 3
         self.living_cost = -1
         self.reward_per_order = 10
         self.penalty_per_order = 9
@@ -33,9 +35,12 @@ class World:
         ImmOrders = tuple([tuple(x) for x in curr_df.values])
         return ImmOrders
 
+    def getOneOrder_inTuple(self, _order_idx):
+        return tuple(self.training_df.iloc[_order_idx].values.tolist())
+
     def getSuccessorStateandReward(self, _state, _action):
         """
-        * state = (pos, str_time, [received], [carrying])
+        * state = (pos, str_time, (received), (carrying))
         * action = ('South', [0,1], [2])
 
         """
@@ -58,14 +63,15 @@ class World:
         # Receive orders
         nextState.append(list(_state[2]))
         for received_idx in _action[1]:
-            nextState[2].append(tuple(self.training_df.iloc[received_idx].values.tolist()))
+            nextState[2].append(self.getOneOrder_inTuple(received_idx))
         # Update received orders to carrying status
         nextState.append(list(_state[3]))
         if _state[0] in self.map.restaurants_poss:
             cur_res_idx = self.map.restaurants_poss.index(_state[0])
             cur_res_name = 'res_' + chr(ord('A') + cur_res_idx)
             for received_order in nextState[2]:
-                if cur_res_name in received_order:
+                # Limit on # of carrying orders
+                if cur_res_name in received_order and len(nextState[3]) < self.max_carrying_num:
                     nextState[3].append(received_order)
                     nextState[2].remove(received_order)
         # Update carrying orders
@@ -118,6 +124,9 @@ class World:
         
         ImmOrders = self.getImmOrders(_state[1])
         order_actions = util.getHandleOrdersChoices(ImmOrders)
+        # Decrease choices according to the orders in current state
+        curr_received_num = len(_state[2])
+        order_actions = [valid_action for valid_action in order_actions if curr_received_num + len(valid_action[0]) <= self.max_received_num]
         actions = []
         for move_action in move_actions:
             for order_action in order_actions:
@@ -135,17 +144,13 @@ class World:
         Actions are chosen arbitrarily.
         """
         for iter_idx in range(numIter):
-            score_per_iter = 0
             state = self.init_agent_state
-            actions = self.getLegalActions(state)
-            while len(actions) != 0:
+            while not self.isTerminal(state):
                 # print(state)
-                action = rd.choice(actions)
+                action = self.agent.getAction_byQvalues(state)
                 nextState, reward = self.getSuccessorStateandReward(state, action)
                 self.agent.update(state, action, nextState, reward)
-                score_per_iter += reward
                 state = nextState
-                actions = self.getLegalActions(state)
             if iter_idx % 10 == 0:
                 print("iter", iter_idx)
                 if iter_idx > 2:
@@ -199,7 +204,7 @@ class World:
                 state = self.init_agent_state
                 # Run an episode
                 while not self.isTerminal(state):
-                    successor, reward = self.getSuccessorStateandReward(state, self.agent.getAction(state))
+                    successor, reward = self.getSuccessorStateandReward(state, self.agent.getAction_byDict(state))
                     sample = reward + self.agent.gamma * values_pi[successor]
                     values_pi[state] = (1-self.agent.alpha) * values_pi[state] + self.agent.alpha * sample
                     state = successor
@@ -271,8 +276,8 @@ class World:
 if __name__ == "__main__":
     zhangjiang = World()
     # zhangjiang.valueIter()
-    # zhangjiang.trainWeights()
-    zhangjiang.policyIter_TDL()
+    zhangjiang.trainWeights()
+    # zhangjiang.policyIter_TDL()
 
 
 
