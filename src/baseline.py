@@ -85,8 +85,8 @@ class GreedyWorld:
                         if current_time > util.getDueTime(order):
                             self.reward -= self.penalty_per_order
                     self.agent.carrying = []
-                print(self.agent.received)
-                print(len(self.agent.received))
+                # print(self.agent.received)
+                # print(len(self.agent.received))
                 " Judge whether the pos is on the restaurant pos "
                 received = []
                 for rec in self.agent.received:
@@ -97,14 +97,14 @@ class GreedyWorld:
                         #     print(j)
                         #     order = self.agent.received[j]
                         for order in self.agent.received:
-                            print(order)
+                            # print(order)
                             if order[2] == self.res_name[i]:
-                                print('here!')
+                                # print('here!')
                                 self.agent.carrying.append(order)
                                 received.remove(order)
                 self.agent.received = received
-                print(current_time)
-                print(self.agent.received)
+                # print(current_time)
+                # print(self.agent.received)
                 " Plan the next pos "
                 self.agent.update_ddl()
                 if not self.check_in_time(current_time):
