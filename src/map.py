@@ -4,8 +4,8 @@ class Mymap:
     def __init__(self):
         self.destination_idx = 0
         self.restaurants_num = 4
-        self.des_pos = (5,2)
-        self.restaurants_poss = [(0,0), (1,8), (6,6), (13,4)]
+        self.des_pos = (5, 2)
+        self.restaurants_poss = [(0, 0), (1, 8), (6, 6), (13, 4)]
         self.accessed = []
         self.positions = []
         self.successors = {}
@@ -111,6 +111,23 @@ class Mymap:
                     if successor not in past:
                         queue.push((successor, output_list + [successor]))
         return output_list
+
+    def search_route(self, restaurants, pos):
+        path = []
+        path_length = []
+        if len(restaurants) == 0:
+            des_path = len(self.bfs(pos, self.des_pos))
+            return [None, des_path]
+        for restaurant in restaurants:
+            path.append(self.bfs(pos, restaurant))
+            new_res = []
+            for restaurant_copy in restaurants:
+                new_res.append(restaurant_copy)
+            new_res.remove(restaurant)
+            path_length.append(len(self.bfs(pos, restaurant)) + self.search_route(new_res, restaurant)[1])
+        path_min = min(path_length)
+        path_next_res = path_length.index(path_min)
+        return [path_next_res, path_min]
 
 
 # world_map = Mymap()
