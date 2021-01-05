@@ -1,10 +1,12 @@
 import pandas as pd
 import datetime as dt
 import math
+import json
 import random as rd
 import util
 from map import *
 from agent import *
+import copy
 
 class World:
     def __init__(self, _map = Mymap()):
@@ -24,6 +26,13 @@ class World:
         self.penalty_per_order = 5
 
         self.init_agent_state = (self.init_agent_pos, util.datetime_to_str(self.start_time), (), ())
+
+        csv_data = pd.DataFrame(data={
+            "score": [],
+            "Succeeded orders": [],
+            "Failed orders": []
+        })
+        csv_data.to_csv('./log/iteration.csv', mode="w", index=True)
 
 
     def getImmOrders(self, _str_time):
@@ -112,7 +121,7 @@ class World:
         """
         if util.str_to_datetime(_state[1]) >= self.end_time:
             return []
-        
+
         successors = self.map.get_successor(_state[0])
         assert(len(successors)>0)
         # move_actions = ['Stay']
@@ -125,7 +134,7 @@ class World:
             move_actions.append('East')
         if (_state[0][0], _state[0][1]-1) in successors:
             move_actions.append('West')
-        
+
         ImmOrders = self.getImmOrders(_state[1])
         order_actions = util.getHandleOrdersChoices(ImmOrders)
         # Decrease choices according to the orders in current state
@@ -136,7 +145,7 @@ class World:
             for order_action in order_actions:
                 # order_action = ([received_idxs],[rejected_idxs])
                 actions.append((move_action, order_action[0], order_action[1]))
-        
+
         return actions
 
     def isTerminal(self, _state):
@@ -302,6 +311,7 @@ class World:
         state = self.init_agent_state
         success = []
         fail = []
+
         while not self.isTerminal(state):
             # print(state)
             action = self.agent.getPolicy_byDict(state)
@@ -313,6 +323,47 @@ class World:
         print("Failed orders:\n", fail)
         print("score = ", score)
 
+        self.log_iteration(score, success, fail)
+
+    def log_iteration(self, score, success, fail):
+        tem_success = []
+        tem_fail = []
+        for s in success:
+            tem_success.append((int(s[0]), s[1], s[2], int(s[3])))
+        for s in fail:
+            tem_fail.append((int(s[0]), s[1], s[2], int(s[3])))
+
+        csv_data = pd.DataFrame(data={
+            "score": [score],
+            "Succeeded orders": [json.dumps(tem_success)],
+            "Failed orders": [json.dumps(tem_fail)]
+        })
+        csv_data.to_csv('./log/iteration.csv', mode="a", header=False, index=True)
+
+        with open('./log/policy.json', 'w') as f:
+            data = self.agent.policy
+            keys = []
+            values = list(data.values())
+            for s in data.keys():
+                reformat_s2 = []
+                for i in s[2]:
+                    reformat_s2.append(json.dumps((int(i[0]), i[1], i[2], int(i[3]))))
+                reformat_s3 = []
+                for i in s[3]:
+                    reformat_s3.append(json.dumps((int(i[0]), i[1], i[2], int(i[3]))))
+                keys.append(json.dumps((s[0], s[1], reformat_s2, reformat_s3)))
+
+            result = json.dumps(dict(zip(keys, values)))
+            f.write(result)
+
+
+
+
+
+
+
+
+
 if __name__ == "__main__":
     zhangjiang = World()
     # zhangjiang.valueIter()
@@ -322,7 +373,6 @@ if __name__ == "__main__":
 
 
 
-        
-        
 
-        
+
+
