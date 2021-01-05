@@ -48,28 +48,33 @@ class OrderGenerator:
 
         for i in range(0, int(day)):
             self.generate_single_day(10)
-            print(i)
+            if len(self.dataSource) >= 2000:
+                print("transform 2K data to csv, current data:{}".format(i))
+                self.csv_encoder(i - 2000)
+                self.dataSource.clear()
 
-
-    def csv_encoder(self):
+    def csv_encoder(self, start_index=0):
         print("Simulate Days Number: {}".format(len(self.dataSource)))
-        file_index = 0
+        file_index = start_index
         tem_create_time = []
         tem_restaurant = []
         tem_limit = []
         if not os.path.exists("data"):
             os.makedirs("data")
         for day in self.dataSource:
+            tem_create_time.clear()
+            tem_restaurant.clear()
+            tem_limit.clear()
             for data in day:
                 tem_create_time.append(str(data.create_time))
                 tem_restaurant.append(data.restaurant)
                 tem_limit.append(str(data.time_limit))
-            data = pd.DataFrame(data={
+            csv_data = pd.DataFrame(data={
                 "created_time": tem_create_time,
                 "restaurant": tem_restaurant,
                 "limit_time": tem_limit
             })
-            data.to_csv('./data/{}.csv'.format(file_index), index=True)
+            csv_data.to_csv('./data/{}.csv'.format(file_index), index=True)
             file_index += 1
             print(file_index)
 
@@ -101,6 +106,9 @@ class OrderGenerator:
             for i in range(size):
                 delta = np.random.normal(0, 5)
                 tem_re.append(Order(f['time'] + datetime.timedelta(minutes=delta), f['res'], self.destination, f['limit']))
+        if len(tem_re) != len(features) * size:
+            raise KeyError
+        np.random.shuffle(tem_re)
         self.dataSource.append(tem_re)
 
     @staticmethod
@@ -111,4 +119,3 @@ class OrderGenerator:
 if __name__ == "__main__":
     instance = OrderGenerator(restaurants, destinations, foods, day=5e4)
     instance.csv_encoder()
-

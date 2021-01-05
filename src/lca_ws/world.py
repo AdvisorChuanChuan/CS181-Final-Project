@@ -138,7 +138,7 @@ class World:
     def isTerminal(self, _state):
         return len(self.getLegalActions(_state)) == 0
 
-    def trainWeights(self, numIter = 100):
+    def trainWeights(self, numIter = 100000):
         """
         Start from an innocent agent, repeat the delivery period for numIter times.
         Actions are chosen arbitrarily.
@@ -153,6 +153,7 @@ class World:
                 state = nextState
             if iter_idx % 10 == 0:
                 print("iter", iter_idx)
+                print(self.agent.getWeights())
                 if iter_idx > 2:
                     self.testOneEpisode_byQvalues()
             # TODO: plot this figure

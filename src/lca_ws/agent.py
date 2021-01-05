@@ -10,7 +10,7 @@ class ApproximateQAgent:
     Use a particular feature extractor
     """
     def __init__(self, _actionFn, _world):
-        self.alpha = 0.01  # learning rate
+        self.alpha = 0.1  # learning rate
         self.gamma = 0.8  # discounting factor
         self.epsilon = 0.05  # exploration factor
         self.actionFn = _actionFn
