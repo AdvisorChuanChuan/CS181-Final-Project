@@ -1,9 +1,8 @@
 import numpy as np
-import json
 import os
 import pandas as pd
 import datetime
-from src.constants import destinations, restaurants, foods, week
+from src.simple_model.constants import destinations, restaurants, foods, week
 
 
 # todo: sort by time
@@ -85,30 +84,15 @@ class OrderGenerator:
                 "time": MyTime(11, 50),
                 "res": self.restaurants[0]["name"],
                 "limit": self.get_time_limit(self.restaurants[0]["distance"])
-            },
-            {
-                "time": MyTime(12, 30),
-                "res": self.restaurants[1]["name"],
-                "limit": self.get_time_limit(self.restaurants[1]["distance"])
-            },
-            {
-                "time": MyTime(11, 30),
-                "res": self.restaurants[2]["name"],
-                "limit": self.get_time_limit(self.restaurants[2]["distance"])
-            },
-            {
-                "time": MyTime(12, 50),
-                "res": self.restaurants[3]["name"],
-                "limit": self.get_time_limit(self.restaurants[3]["distance"])
             }
         ]
         for f in features:
             for i in range(size):
                 delta = np.random.normal(0, 5)
-                tem_re.append(Order(f['time'] + datetime.timedelta(minutes=delta), f['res'], self.destination, f['limit']))
-        if len(tem_re) != len(features) * size:
+                tem_re.append(
+                    Order(f['time'] + datetime.timedelta(minutes=delta), f['res'], self.destination, f['limit']))
+        if len(tem_re) != 10:
             raise KeyError
-        np.random.shuffle(tem_re)
         self.dataSource.append(tem_re)
 
     @staticmethod
@@ -118,4 +102,3 @@ class OrderGenerator:
 
 if __name__ == "__main__":
     instance = OrderGenerator(restaurants, destinations, foods, day=5e4)
-    instance.csv_encoder()

@@ -78,7 +78,7 @@ class World:
         actual_reward = self.living_cost
         if _state[0] == self.map.des_pos and len(_state[3]) != 0:
             tot_reward = self.reward_per_order * len(nextState[3])
-            tot_penalty = 0
+            tot_penalty = 1
             for order in nextState[3]:
                 if dt_curr_time > util.getDueTime(order):
                     tot_penalty += self.penalty_per_order
@@ -142,7 +142,7 @@ class World:
     def isTerminal(self, _state):
         return len(self.getLegalActions(_state)) == 0
 
-    def trainWeights(self, numIter = 100):
+    def trainWeights(self, numIter = 100000):
         """
         Start from an innocent agent, repeat the delivery period for numIter times.
         Actions are chosen arbitrarily.
@@ -163,6 +163,7 @@ class World:
                 state = nextState
             if iter_idx % 10 == 0:
                 print("iter", iter_idx)
+                print(self.agent.getWeights())
                 if iter_idx > 2:
                     self.testOneEpisode_byQvalues()
                     print(self.agent.weights)

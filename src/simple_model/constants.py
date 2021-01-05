@@ -1,6 +1,6 @@
 restaurants = [{
     "name": "res_A",
-    "distance": 11
+    "distance": 10
 }, {
     "name": "res_B",
     "distance": 10
