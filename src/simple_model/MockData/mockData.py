@@ -91,7 +91,7 @@ class OrderGenerator:
                 delta = np.random.normal(0, 5)
                 tem_re.append(
                     Order(f['time'] + datetime.timedelta(minutes=delta), f['res'], self.destination, f['limit']))
-        if len(tem_re) != 40:
+        if len(tem_re) != 10:
             raise KeyError
         self.dataSource.append(tem_re)
 
