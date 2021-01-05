@@ -4,15 +4,27 @@ import util
 # from buffer import *
 from featureExtractor import *
 
+def findCommand(_currPos, _nextPos):
+    if _nextPos == (_currPos[0]+1, _currPos[1]):
+        return 'South'
+    elif _nextPos == (_currPos[0]-1, _currPos[1]):
+        return 'North'
+    elif _nextPos == (_currPos[0], _currPos[1]+1):
+        return 'East'
+    elif _nextPos == (_currPos[0], _currPos[1]-1):
+        return 'West'
+    else:
+        raise Exception("Invalid pos transition")
+
 class ApproximateQAgent:
     """
     Approximate Q-learning agent
     Use a particular feature extractor
     """
     def __init__(self, _actionFn, _world):
-        self.alpha = 0.01  # learning rate
+        self.alpha = 0.1  # learning rate
         self.gamma = 0.8  # discounting factor
-        self.epsilon = 0.05  # exploration factor
+        self.epsilon = 0.5  # exploration factor
         self.actionFn = _actionFn
 
         self.orderBuffer = []
@@ -45,12 +57,51 @@ class ApproximateQAgent:
             return 0.0
         qvalues = [self.getQValue(_state, action) for action in self.getLegalActions(_state)]
         # if dt.datetime.now().second % 10 == 0:
-            # print(qvalues)
+        #     print("state: \n", _state)
+        #     print("Q_values: \n", qvalues)
         return max(qvalues)
 
     def getPolicy_byDict(self, _state):
         actions = self.getLegalActions(_state)
-        return actions[self.policy[_state]]
+        if _state in self.policy:
+            return actions[self.policy[_state]]
+        else:
+            # Initialize a policy for current state
+            # 1. if agent at campus: leave and receive many orders
+            # 2. if agent not at campus: * go to campus if carrying orders
+            #                            * go to restaurant otherwise
+            if _state[0] == self.world.map.des_pos:
+                # Find the action that receive the most orders
+                desired_action = actions[0]
+                for action in actions:
+                    if len(action[1]) > len(desired_action[1]):
+                        desired_action = action
+            elif len(_state[3]) > 0:
+                nextPos = self.world.map.bfs(_state[0], self.world.map.des_pos)[0]
+                command = findCommand(_state[0], nextPos)
+                desired_action = (actions[0][0], (), ())
+                for action in actions:
+                    if action[0] == command and len(action[1]) >= len(desired_action[1]):
+                        desired_action = action
+            elif len(_state[2]) > 0:
+                heading_res = _state[2][0][2]
+                res_idx = ord(heading_res[-1]) - ord('A')
+                res_pos = self.world.map.restaurants_poss[res_idx]
+                if _state[0] == res_pos:
+                    desired_action = actions[0]
+                else:
+                    nextPos = self.world.map.bfs(_state[0], res_pos)[0]
+                    command = findCommand(_state[0], nextPos)
+                    desired_action = (actions[0][0], (), ())
+                    for action in actions:
+                        if action[0] == command and len(action[1]) >= len(desired_action[1]):
+                            desired_action = action
+            else:
+                desired_action = actions[0]
+            self.policy[_state] = actions.index(desired_action)
+            return desired_action
+
+                
 
     def getPolicy_byQvalues(self, _state):
         """

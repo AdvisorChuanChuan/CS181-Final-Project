@@ -11,17 +11,17 @@ class World:
         self.map = _map
         self.agent = ApproximateQAgent(self.getLegalActions, self)
         self.init_agent_pos = (5,2) # at campus
-        self.start_time = dt.datetime(2020,1,1,11,30)
+        self.start_time = dt.datetime(2020,1,1,11,00)
         self.end_time = dt.datetime(2020,1,1,13,00)  # 11:00 --- 14:00, 1 min per action
         self.delta_t = dt.timedelta(seconds=60)    # deltat = 1 min
         self.orders_packet_idx = 0
-        self.training_df = pd.read_csv("data/" + str(self.orders_packet_idx) + ".csv")[0:15]
+        self.training_df = pd.read_csv("data/" + str(self.orders_packet_idx) + ".csv")
 
         self.max_received_num = 3
         self.max_carrying_num = 3
         self.living_cost = -1
         self.reward_per_order = 10
-        self.penalty_per_order = 9
+        self.penalty_per_order = 5
 
         self.init_agent_state = (self.init_agent_pos, util.datetime_to_str(self.start_time), (), ())
 
@@ -76,7 +76,7 @@ class World:
                     nextState[2].remove(received_order)
         # Update carrying orders
         actual_reward = self.living_cost
-        if _state[0] == self.map.des_pos:
+        if _state[0] == self.map.des_pos and len(_state[3]) != 0:
             tot_reward = self.reward_per_order * len(nextState[3])
             tot_penalty = 0
             for order in nextState[3]:
@@ -87,7 +87,11 @@ class World:
         # Convert order lists to tuples
         nextState[2] = tuple(nextState[2])
         nextState[3] = tuple(nextState[3])
-        return tuple(nextState), actual_reward
+        # Handle ending state
+        if not self.isTerminal(tuple(nextState)):
+            return tuple(nextState), actual_reward
+        else:
+            return tuple(nextState), actual_reward + self.getFinalStateValue(nextState)
 
     def getFinalStateValue(self, _state):
         assert(len(self.getLegalActions(_state)) == 0)
@@ -147,7 +151,13 @@ class World:
             state = self.init_agent_state
             while not self.isTerminal(state):
                 # print(state)
+
+                # getAction
                 action = self.agent.getAction_byQvalues(state)
+
+                # Random choose
+                # action = rd.choice(self.getLegalActions(state))
+
                 nextState, reward = self.getSuccessorStateandReward(state, action)
                 self.agent.update(state, action, nextState, reward)
                 state = nextState
@@ -155,6 +165,7 @@ class World:
                 print("iter", iter_idx)
                 if iter_idx > 2:
                     self.testOneEpisode_byQvalues()
+                    print(self.agent.weights)
             # TODO: plot this figure
 
     def valueIter(self, numIter = 1000):
@@ -229,19 +240,42 @@ class World:
             # if improve_idx % 100 == 0:
             self.testOneEpisode_byDict()
 
+    def record_results(self, _success, _fail, _state, _nextState):
+        """
+        Record the succeeded and failed orders between two states
+        """
+        if self.isTerminal(_nextState):
+            for order in list(_nextState[2]) + list(_nextState[3]):
+                _fail.append(order)
+        else:
+            for prev_order in _state[3]:
+                # find delivered orders
+                if prev_order not in _nextState[3]:
+                    # find succeeded orders
+                    if util.getDueTime(prev_order) <= util.str_to_datetime(_state[1]):
+                        _success.append(prev_order)
+                    # find failed orders
+                    else:
+                        _fail.append(prev_order)
+
+
     def testOneEpisode_byQvalues(self):
         """
         Test the policy for one episode
         """
         score = 0
         state = self.init_agent_state
-        actions = self.getLegalActions(state)
-        while len(actions) != 0:
+        succeeded_orders = []
+        failed_orders = []
+        while not self.isTerminal(state):
+            print(state)
             action = self.agent.getPolicy_byQvalues(state)
             nextState, reward = self.getSuccessorStateandReward(state, action)
             score += reward
+            self.record_results(succeeded_orders, failed_orders, state, nextState)
             state = nextState
-            actions = self.getLegalActions(state)
+        print("Succeeded orders:\n", succeeded_orders)
+        print("Failed orders:\n", failed_orders)
         print("score = ", score)
 
     def testOneEpisode_byValues(self, _values):
@@ -265,19 +299,25 @@ class World:
         """
         score = 0
         state = self.init_agent_state
+        success = []
+        fail = []
         while not self.isTerminal(state):
+            # print(state)
             action = self.agent.getPolicy_byDict(state)
             nextState, reward = self.getSuccessorStateandReward(state, action)
+            self.record_results(success, fail, state, nextState)
             score += reward
             state = nextState
-            actions = self.getLegalActions(state)
+        print("Succeeded orders:\n", success)
+        print("Failed orders:\n", fail)
         print("score = ", score)
 
 if __name__ == "__main__":
     zhangjiang = World()
     # zhangjiang.valueIter()
-    zhangjiang.trainWeights()
-    # zhangjiang.policyIter_TDL()
+    # zhangjiang.trainWeights()
+    zhangjiang.policyIter_TDL()
+    # zhangjiang.testOneEpisode_byDict()
 
 
 
