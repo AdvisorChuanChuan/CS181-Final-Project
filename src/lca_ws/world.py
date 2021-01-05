@@ -27,6 +27,8 @@ class World:
 
         self.init_agent_state = (self.init_agent_pos, util.datetime_to_str(self.start_time), (), ())
 
+        self.best_score = -10000
+
         csv_data = pd.DataFrame(data={
             "score": [],
             "Succeeded orders": [],
@@ -340,21 +342,23 @@ class World:
         })
         csv_data.to_csv('./log/iteration.csv', mode="a", header=False, index=True)
 
-        with open('./log/policy.json', 'w') as f:
-            data = self.agent.policy
-            keys = []
-            values = list(data.values())
-            for s in data.keys():
-                reformat_s2 = []
-                for i in s[2]:
-                    reformat_s2.append(json.dumps((int(i[0]), i[1], i[2], int(i[3]))))
-                reformat_s3 = []
-                for i in s[3]:
-                    reformat_s3.append(json.dumps((int(i[0]), i[1], i[2], int(i[3]))))
-                keys.append(json.dumps((s[0], s[1], reformat_s2, reformat_s3)))
+        if self.best_score < score:
+            self.best_score = score
+            with open('./log/policy.json', 'w') as f:
+                data = self.agent.policy
+                keys = []
+                values = list(data.values())
+                for s in data.keys():
+                    reformat_s2 = []
+                    for i in s[2]:
+                        reformat_s2.append(json.dumps((int(i[0]), i[1], i[2], int(i[3]))))
+                    reformat_s3 = []
+                    for i in s[3]:
+                        reformat_s3.append(json.dumps((int(i[0]), i[1], i[2], int(i[3]))))
+                    keys.append(json.dumps((s[0], s[1], reformat_s2, reformat_s3)))
 
-            result = json.dumps(dict(zip(keys, values)))
-            f.write(result)
+                result = json.dumps(dict(zip(keys, values)))
+                f.write(result)
 
 
 
