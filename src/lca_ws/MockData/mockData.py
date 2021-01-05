@@ -48,8 +48,8 @@ class OrderGenerator:
 
         for i in range(0, int(day)):
             self.generate_single_day(10)
+            print(i)
 
-        # self.csv_encoder()
 
     def csv_encoder(self):
         print("Simulate Days Number: {}".format(len(self.dataSource)))
@@ -71,6 +71,7 @@ class OrderGenerator:
             })
             data.to_csv('./data/{}.csv'.format(file_index), index=True)
             file_index += 1
+            print(file_index)
 
     def generate_single_day(self, size):
         tem_re = []
@@ -108,6 +109,6 @@ class OrderGenerator:
 
 
 if __name__ == "__main__":
-    instance = OrderGenerator(restaurants, destinations, foods, day=1e3)
+    instance = OrderGenerator(restaurants, destinations, foods, day=5e4)
     instance.csv_encoder()
 

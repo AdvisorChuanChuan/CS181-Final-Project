@@ -78,7 +78,7 @@ class World:
         actual_reward = self.living_cost
         if _state[0] == self.map.des_pos:
             tot_reward = self.reward_per_order * len(nextState[3])
-            tot_penalty = 0
+            tot_penalty = 1
             for order in nextState[3]:
                 if dt_curr_time > util.getDueTime(order):
                     tot_penalty += self.penalty_per_order
