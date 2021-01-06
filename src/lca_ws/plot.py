@@ -9,4 +9,8 @@ if __name__ =="__main__":
     scores_rd = df_rd['score'].values.tolist()
     plt.plot(iters, scores)
     plt.plot(iters, scores_rd)
+    plt.xlabel('iteration')
+    plt.ylabel('score')
+    plt.title('Policy Improvement')
+    plt.legend(labels = ['TDL Policy Improvement', 'Random Policy Improvement'], loc = 'lower left')
     plt.show()
