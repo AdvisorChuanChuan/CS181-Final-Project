@@ -1,0 +1,22 @@
+1. world->state action order generation with picture example
+2. outline    try three methods approximate Q learn Value iteration   policy iterations
+3. summary why previous two methods failed
+4. approximate Q learning princple
+    show  formula in slide 18 page 35
+    show our designed feature
+    show unfavourable result  (description:   behavior and score remain low)
+    analyze resaon  in feature design and method doesn't fit out situation(state space too large)
+5. Value iteration
+    slide 16 page 35
+    use queue to do value iteration
+    data increadse expoentially
+    state reach 10e5  memory is filled and program crash
+6. Policy iteration
+    tow step: policy evaluation and policy improvement
+         PE: S17 P 48 PI: S17 P19
+    show result three graph (highest baseline)
+7. possible improvement
+    feature improvement
+    generalize policy to fit data of multiple days
+    more computation power leads to better result (still explore within 1000 improvement)
+

@@ -34,7 +34,7 @@ class GreedyWorld:
     def __init__(self):
         self.map = Mymap()
         self.agent = GreedyAgent()
-        self.start_time = dt.datetime(2020, 1, 1, 11, 30)
+        self.start_time = dt.datetime(2020, 1, 1, 11, 00)
         self.end_time = dt.datetime(2020, 1, 1, 13, 00)
         self.delta_t = dt.timedelta(seconds=60)
         self.orders_packet_idx = 0
@@ -43,7 +43,7 @@ class GreedyWorld:
         self.reward = 0
         self.living_cost = -1
         self.reward_per_order = 10
-        self.penalty_per_order = 9
+        self.penalty_per_order = 5
         self.max_received_num = 3
         self.max_carrying_num = 3
 
@@ -72,7 +72,7 @@ class GreedyWorld:
             current_time_str = util.datetime_to_str(current_time)
             ImmOrders = self.getImmOrders(current_time_str)
             # print(ImmOrders)
-            while len(self.agent.received) + len(self.agent.carrying) < 5 and len(ImmOrders) > 0:
+            while len(self.agent.received) + len(self.agent.carrying) < 6 and len(ImmOrders) > 0:
                 self.agent.received.append(ImmOrders[0])
                 ImmOrders = ImmOrders[1:]
             # print(self.agent.received)
