@@ -252,6 +252,16 @@ class World:
             # if improve_idx % 100 == 0:
             self.testOneEpisode_byDict()
 
+    def random_policy_improvement(self, improve_times = 1000):
+        for improve_idx in range(improve_times):
+            print("improve times: ", improve_idx)
+            self.testOneEpisode_byDict()
+            # Random improve the policy
+            new_policy = self.agent.policy.copy()
+            for state in new_policy:
+                new_policy[state] = rd.choice(self.getLegalActions(state))
+
+
     def record_results(self, _success, _fail, _state, _nextState):
         """
         Record the succeeded and failed orders between two states
@@ -372,8 +382,10 @@ if __name__ == "__main__":
     zhangjiang = World()
     # zhangjiang.valueIter()
     # zhangjiang.trainWeights()
-    zhangjiang.policyIter_TDL()
+    # zhangjiang.policyIter_TDL()
     # zhangjiang.testOneEpisode_byDict()
+
+    zhangjiang.random_policy_improvement()
 
 
 
