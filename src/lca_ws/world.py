@@ -1,5 +1,6 @@
 import pandas as pd
 import datetime as dt
+import numpy as np
 import math
 import json
 import random as rd
@@ -262,13 +263,14 @@ class World:
                 new_policy[state] = rd.choice(self.getLegalActions(state))
 
 
-    def record_results(self, _success, _fail, _state, _nextState):
+    def record_results(self, _success, _overtime, _fail, _state, _nextState):
         """
         Record the succeeded and failed orders between two states
         """
         if self.isTerminal(_nextState):
             for order in list(_nextState[2]) + list(_nextState[3]):
-                _fail.append(order)
+                if util.getDueTime(order) <= util.str_to_datetime(_state[1]):
+                    _fail.append(order)
         else:
             for prev_order in _state[3]:
                 # find delivered orders
@@ -276,9 +278,9 @@ class World:
                     # find succeeded orders
                     if util.getDueTime(prev_order) <= util.str_to_datetime(_state[1]):
                         _success.append(prev_order)
-                    # find failed orders
+                    # find overtime orders
                     else:
-                        _fail.append(prev_order)
+                        _overtime.append(prev_order)
 
 
     def testOneEpisode_byQvalues(self):
@@ -322,17 +324,20 @@ class World:
         score = 0
         state = self.init_agent_state
         success = []
+        overtime = []
         fail = []
 
         while not self.isTerminal(state):
             # print(state)
             action = self.agent.getPolicy_byDict(state)
             nextState, reward = self.getSuccessorStateandReward(state, action)
-            self.record_results(success, fail, state, nextState)
+            self.record_results(success, overtime, fail, state, nextState)
             score += reward
             state = nextState
         print("Succeeded orders:\n", success)
+        print("Overtime orders:\n", overtime)
         print("Failed orders:\n", fail)
+        print("Num = ", len(success), ", ", len(overtime), ", ", len(fail))
         print("score = ", score)
 
         self.log_iteration(score, success, fail)
@@ -370,6 +375,30 @@ class World:
                 result = json.dumps(dict(zip(keys, values)))
                 f.write(result)
 
+    @staticmethod
+    def decoder():
+        with open("./log/policy3.json", "r") as f:
+            b = json.loads(f.read())
+            re = util.Counter()
+            for key, value in b.items():
+                key = json.loads(key)
+                tem_key = []
+                for i in key[2]:
+                    re_tuple = json.loads(i)
+                    tem_key.append((np.dtype('int64').type(re_tuple[0]), re_tuple[1], re_tuple[2],
+                                    np.dtype('int64').type(re_tuple[3])))
+
+                key[2] = tuple(tem_key)
+                tem_key.clear()
+                for i in key[3]:
+                    re_tuple = json.loads(i)
+                    tem_key.append((np.dtype('int64').type(re_tuple[0]), re_tuple[1], re_tuple[2],
+                                    np.dtype('int64').type(re_tuple[3])))
+                key[3] = tuple(tem_key)
+                key[0] = tuple(key[0])
+                key = tuple(key)
+                re[key] = value
+        return re
 
 
 
@@ -382,8 +411,8 @@ if __name__ == "__main__":
     zhangjiang = World()
     # zhangjiang.valueIter()
     # zhangjiang.trainWeights()
-    zhangjiang.policyIter_TDL()
-    # zhangjiang.testOneEpisode_byDict()
+    # zhangjiang.policyIter_TDL()
+    zhangjiang.testOneEpisode_byDict()
 
     # zhangjiang.random_policy_improvement()
 

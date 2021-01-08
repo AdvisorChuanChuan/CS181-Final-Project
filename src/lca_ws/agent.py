@@ -31,7 +31,7 @@ class ApproximateQAgent:
         self.featExtractor = FeatureExtractor(_world)
         self.weights = util.Counter()
         self.world = _world
-        self.policy = util.Counter()  # Contain the action idx
+        self.policy = self.world.decoder()  # Contain the action idx
 
     def getWeights(self):
         return self.weights
