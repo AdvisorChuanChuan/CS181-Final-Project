@@ -24,14 +24,14 @@ class ApproximateQAgent:
     def __init__(self, _actionFn, _world):
         self.alpha = 0.1  # learning rate
         self.gamma = 0.8  # discounting factor
-        self.epsilon = 0.5  # exploration factor
+        self.epsilon = 0.8  # exploration factor
         self.actionFn = _actionFn
 
         self.orderBuffer = []
         self.featExtractor = FeatureExtractor(_world)
         self.weights = util.Counter()
         self.world = _world
-        self.policy = util.Counter()  # Contain the action idx
+        self.policy = self.world.decoder()  # Contain the action idx
 
     def getWeights(self):
         return self.weights
