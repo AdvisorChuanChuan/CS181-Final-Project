@@ -382,10 +382,10 @@ if __name__ == "__main__":
     zhangjiang = World()
     # zhangjiang.valueIter()
     # zhangjiang.trainWeights()
-    # zhangjiang.policyIter_TDL()
+    zhangjiang.policyIter_TDL()
     # zhangjiang.testOneEpisode_byDict()
 
-    zhangjiang.random_policy_improvement()
+    # zhangjiang.random_policy_improvement()
 
 
 

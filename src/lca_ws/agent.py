@@ -24,7 +24,7 @@ class ApproximateQAgent:
     def __init__(self, _actionFn, _world):
         self.alpha = 0.1  # learning rate
         self.gamma = 0.8  # discounting factor
-        self.epsilon = 0.5  # exploration factor
+        self.epsilon = 0.8  # exploration factor
         self.actionFn = _actionFn
 
         self.orderBuffer = []
